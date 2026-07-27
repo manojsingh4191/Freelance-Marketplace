@@ -1,9 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, MessageSquare, Clock, Sparkles, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import useAuthStore from '../store/useAuthStore';
 
 const SOCKET_URL = 'http://localhost:5000';
+
+const bubbleVariants = {
+  hidden: { opacity: 0, y: 12, scale: 0.94 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } }
+};
+
+const sidebarVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
+};
+
+const convVariants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }
+};
 
 export default function Messages() {
   const { user } = useAuthStore();
@@ -12,22 +29,17 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [clearTimer, setClearTimer] = useState(0);
-  
+
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     fetchConversations();
-    // Initialize socket connection
     socketRef.current = io(SOCKET_URL);
-
     socketRef.current.on('receive_message', (message) => {
       setMessages((prev) => [...prev, message]);
     });
-
-    return () => {
-      socketRef.current.disconnect();
-    };
+    return () => { socketRef.current.disconnect(); };
   }, []);
 
   const fetchConversations = async () => {
@@ -41,18 +53,13 @@ export default function Messages() {
 
   useEffect(() => {
     if (activeRoom) {
-      // Fetch persistence from API
       const fetchHistory = async () => {
         try {
           const res = await api.get(`/messages/${activeRoom.roomId}`);
           setMessages(res.data);
-        } catch (err) {
-          console.error('Failed to fetch history', err);
-        }
+        } catch (err) { console.error('Failed to fetch history', err); }
       };
       fetchHistory();
-
-      // Join socket room for real-time
       socketRef.current.emit('join_room', activeRoom.roomId);
     }
   }, [activeRoom]);
@@ -64,108 +71,346 @@ export default function Messages() {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeRoom) return;
-
-    const messageData = {
+    socketRef.current.emit('send_message', {
       sender: user._id,
-      receiver: activeRoom.otherUser._id, 
+      receiver: activeRoom.otherUser._id,
       text: newMessage,
       roomId: activeRoom.roomId,
       expiresInSeconds: clearTimer
-    };
-
-    socketRef.current.emit('send_message', messageData);
+    });
     setNewMessage('');
   };
 
+  // ─── Inline Styles ───────────────────────────────────────────────
+
+  const wrapperStyle = {
+    height: 'calc(100vh - 72px)',
+    display: 'flex',
+    gap: '16px',
+    padding: '16px',
+    background: 'var(--bg-primary)',
+    overflow: 'hidden',
+  };
+
+  const panelBase = {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '20px',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    boxShadow: 'var(--shadow-card)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+
+  const sidebarStyle = {
+    ...panelBase,
+    width: '300px',
+    flexShrink: 0,
+  };
+
+  const chatAreaStyle = {
+    ...panelBase,
+    flex: 1,
+  };
+
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gray-50 flex">
-      {/* Sidebar - Conversations List */}
-      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Messages</h2>
+    <div style={wrapperStyle}>
+      {/* ─── LEFT SIDEBAR ─── */}
+      <div style={sidebarStyle}>
+        {/* Sidebar Header */}
+        <div style={{
+          padding: '20px 18px 16px',
+          borderBottom: '1px solid var(--border-color)',
+          background: 'rgba(168,85,247,0.06)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(124,58,237,0.4)',
+            }}>
+              <MessageSquare size={16} color="white" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Messages
+              </h2>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+
+        {/* Conversation List */}
+        <motion.div
+          variants={sidebarVariants} initial="hidden" animate="visible"
+          style={{ flex: 1, overflowY: 'auto', padding: '8px' }}
+        >
           {conversations.length === 0 ? (
-            <p className="text-gray-500 text-center mt-10">No active conversations</p>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+              <MessageSquare size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
+              <p style={{ fontSize: '13px' }}>No active conversations yet.</p>
+              <p style={{ fontSize: '12px', marginTop: '4px' }}>Accept a proposal to start chatting.</p>
+            </div>
           ) : (
-            conversations.map((conv) => (
-              <div 
-                key={conv.roomId} 
-                onClick={() => setActiveRoom(conv)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${activeRoom?.roomId === conv.roomId ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
-              >
-                <div className="font-semibold text-gray-900">{conv.otherUser.name}</div>
-                <div className="text-sm text-gray-500 truncate">{conv.project.title}</div>
-              </div>
-            ))
+            conversations.map((conv) => {
+              const isActive = activeRoom?.roomId === conv.roomId;
+              return (
+                <motion.div
+                  key={conv.roomId}
+                  variants={convVariants}
+                  whileHover={{ scale: 1.02, x: 3 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveRoom(conv)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    marginBottom: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: isActive
+                      ? 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(168,85,247,0.12))'
+                      : 'transparent',
+                    border: isActive
+                      ? '1px solid rgba(168,85,247,0.35)'
+                      : '1px solid transparent',
+                    boxShadow: isActive ? '0 4px 16px rgba(124,58,237,0.2)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Avatar */}
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0,
+                    background: isActive
+                      ? 'linear-gradient(135deg, #7c3aed, #a855f7)'
+                      : 'linear-gradient(135deg, #374151, #4b5563)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: isActive ? '0 4px 12px rgba(124,58,237,0.4)' : 'none',
+                    fontSize: '16px', fontWeight: 800, color: 'white',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    {conv.otherUser.name[0].toUpperCase()}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '13px', fontWeight: 700,
+                      color: isActive ? 'var(--accent)' : 'var(--text-primary)',
+                      marginBottom: '2px', transition: 'color 0.2s',
+                    }}>
+                      {conv.otherUser.name}
+                    </div>
+                    <div style={{
+                      fontSize: '11px', color: 'var(--text-muted)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {conv.project.title}
+                    </div>
+                  </div>
+
+                  {isActive && (
+                    <ChevronRight size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                  )}
+                </motion.div>
+              );
+            })
           )}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="w-2/3 flex flex-col">
+      {/* ─── MAIN CHAT AREA ─── */}
+      <div style={chatAreaStyle}>
         {activeRoom ? (
           <>
-            <div className="bg-white shadow-sm py-4 px-6 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            {/* Chat Header */}
+            <div style={{
+              padding: '16px 24px',
+              borderBottom: '1px solid var(--border-color)',
+              background: 'rgba(168,85,247,0.04)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+                  fontSize: '18px', fontWeight: 800, color: 'white',
+                }}>
+                  {activeRoom.otherUser.name[0].toUpperCase()}
+                </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-800">{activeRoom.otherUser.name}</h2>
-                  <p className="text-sm text-gray-500">{activeRoom.project.title}</p>
+                  <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    {activeRoom.otherUser.name}
+                  </h2>
+                  <p style={{ fontSize: '12px', color: 'var(--accent)', margin: 0, fontWeight: 600 }}>
+                    {activeRoom.project.title}
+                  </p>
                 </div>
               </div>
-              <select
-                value={clearTimer}
-                onChange={(e) => setClearTimer(Number(e.target.value))}
-                className="text-sm bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer"
-              >
-                <option value={0}>Keep Messages Forever</option>
-                <option value={60}>Self-Destruct (1 Min)</option>
-                <option value={3600}>Self-Destruct (1 Hour)</option>
-                <option value={86400}>Self-Destruct (1 Day)</option>
-              </select>
+
+              {/* Self-Destruct Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={13} style={{ color: 'var(--text-muted)' }} />
+                <select
+                  value={clearTimer}
+                  onChange={(e) => setClearTimer(Number(e.target.value))}
+                  style={{
+                    fontSize: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                    borderRadius: '8px', padding: '5px 10px', color: 'var(--text-secondary)',
+                    outline: 'none', cursor: 'pointer',
+                  }}
+                >
+                  <option value={0}>Keep Forever</option>
+                  <option value={60}>Self-Destruct (1 Min)</option>
+                  <option value={3600}>Self-Destruct (1 Hour)</option>
+                  <option value={86400}>Self-Destruct (1 Day)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex-1 bg-white p-6 overflow-y-auto flex flex-col">
+            {/* Messages Area */}
+            <div style={{
+              flex: 1, overflowY: 'auto',
+              padding: '24px',
+              display: 'flex', flexDirection: 'column', gap: '10px',
+            }}>
               {messages.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                  <p>Start the conversation!</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+                >
+                  <div style={{
+                    width: '72px', height: '72px', borderRadius: '50%',
+                    background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+                  }}>
+                    <Sparkles size={28} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Start the conversation!
+                  </p>
+                  <p style={{ fontSize: '13px' }}>Send the first message to {activeRoom.otherUser.name}.</p>
+                </motion.div>
               ) : (
-                <div className="space-y-4">
+                <AnimatePresence initial={false}>
                   {messages.map((msg, i) => {
                     const isMe = msg.sender === user._id;
                     return (
-                      <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-5 py-3 shadow-sm ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
+                      <motion.div
+                        key={msg._id || i}
+                        variants={bubbleVariants}
+                        initial="hidden"
+                        animate="visible"
+                        style={{
+                          display: 'flex',
+                          justifyContent: isMe ? 'flex-end' : 'flex-start',
+                        }}
+                      >
+                        <div style={{
+                          maxWidth: '68%',
+                          padding: '10px 16px',
+                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                          fontSize: '14px',
+                          lineHeight: 1.5,
+                          wordBreak: 'break-word',
+                          ...(isMe ? {
+                            background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                            color: 'white',
+                            boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
+                          } : {
+                            background: 'var(--bg-card-hover)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            backdropFilter: 'blur(12px)',
+                          }),
+                        }}>
                           {msg.text}
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
-                  <div ref={messagesEndRef} />
-                </div>
+                </AnimatePresence>
               )}
+              <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSendMessage} className="bg-white border-t border-gray-200 p-4 flex gap-3 shadow-sm">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                placeholder="Type your message..."
-              />
-              <button type="submit" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md flex items-center">
-                Send
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-              </button>
-            </form>
+            {/* ─── Floating Input Bar ─── */}
+            <div style={{ padding: '12px 16px', flexShrink: 0 }}>
+              <form
+                onSubmit={handleSendMessage}
+                style={{
+                  display: 'flex', gap: '10px', alignItems: 'center',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '999px',
+                  padding: '8px 8px 8px 20px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+                  backdropFilter: 'blur(16px)',
+                }}
+              >
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={`Message ${activeRoom.otherUser.name}...`}
+                  style={{
+                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                    fontSize: '14px', color: 'var(--text-primary)',
+                  }}
+                />
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.94 }}
+                  disabled={!newMessage.trim()}
+                  style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: newMessage.trim()
+                      ? 'linear-gradient(135deg, #7c3aed, #a855f7)'
+                      : 'rgba(255,255,255,0.1)',
+                    border: 'none', cursor: newMessage.trim() ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: newMessage.trim() ? '0 4px 16px rgba(124,58,237,0.5)' : 'none',
+                    transition: 'all 0.2s ease', flexShrink: 0,
+                  }}
+                >
+                  <Send size={16} color={newMessage.trim() ? 'white' : 'var(--text-muted)'} />
+                </motion.button>
+              </form>
+            </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50 text-gray-400">
-            Select a conversation to start chatting
-          </div>
+          /* Empty State */
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+          >
+            <div style={{
+              width: '88px', height: '88px', borderRadius: '24px', marginBottom: '20px',
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1))',
+              border: '1px solid rgba(168,85,247,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <MessageSquare size={36} style={{ color: 'var(--accent)', opacity: 0.7 }} />
+            </div>
+            <p style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Your Messages
+            </p>
+            <p style={{ fontSize: '13px', textAlign: 'center', maxWidth: '280px', lineHeight: 1.6 }}>
+              Select a conversation from the sidebar to start chatting with your client or freelancer.
+            </p>
+          </motion.div>
         )}
       </div>
     </div>

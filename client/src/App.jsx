@@ -6,7 +6,9 @@ import FreelancerDashboard from './pages/FreelancerDashboard';
 import Messages from './pages/Messages';
 import Payment from './pages/Payment';
 import Navbar from './components/Navbar';
+import Profile from './pages/Profile';
 import useAuthStore from './store/useAuthStore';
+import { ThemeProvider } from './context/ThemeContext';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuthStore();
@@ -20,7 +22,9 @@ function ProtectedRoute({ children, role }) {
   return (
     <>
       <Navbar />
-      {children}
+      <div className="page-content">
+        {children}
+      </div>
     </>
   );
 }
@@ -29,44 +33,52 @@ export default function App() {
   const { user } = useAuthStore();
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Signup />} />
-        
-        {/* Dashboards */}
-        <Route path="/client-dashboard" element={
-          <ProtectedRoute role="Client">
-            <ClientDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/freelancer-dashboard" element={
-          <ProtectedRoute role="Freelancer">
-            <FreelancerDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/messages" element={
-          <ProtectedRoute>
-            <Messages />
-          </ProtectedRoute>
-        } />
-        <Route path="/pay/:projectId" element={
-          <ProtectedRoute role="Client">
-            <Payment />
-          </ProtectedRoute>
-        } />
-        
-        {/* Redirect root based on user role */}
-        <Route path="/" element={
-          user ? (
-            user.role === 'Client' ? <Navigate to="/client-dashboard" replace /> :
-            user.role === 'Freelancer' ? <Navigate to="/freelancer-dashboard" replace /> :
-            <Navigate to="/login" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } />
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider>
+      <div className="glass-bg" />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Signup />} />
+          
+          {/* Dashboards */}
+          <Route path="/client-dashboard" element={
+            <ProtectedRoute role="Client">
+              <ClientDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/freelancer-dashboard" element={
+            <ProtectedRoute role="Freelancer">
+              <FreelancerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          <Route path="/pay/:projectId" element={
+            <ProtectedRoute role="Client">
+              <Payment />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          
+          {/* Redirect root based on user role */}
+          <Route path="/" element={
+            user ? (
+              user.role === 'Client' ? <Navigate to="/client-dashboard" replace /> :
+              user.role === 'Freelancer' ? <Navigate to="/freelancer-dashboard" replace /> :
+              <Navigate to="/login" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
