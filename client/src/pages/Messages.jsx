@@ -5,7 +5,7 @@ import { Send, MessageSquare, Clock, Sparkles, ChevronRight } from 'lucide-react
 import api from '../utils/api';
 import useAuthStore from '../store/useAuthStore';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.PROD ? undefined : 'http://localhost:5000';
 
 const bubbleVariants = {
   hidden: { opacity: 0, y: 12, scale: 0.94 },
