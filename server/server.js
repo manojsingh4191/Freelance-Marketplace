@@ -10,13 +10,18 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' ? false : 'https://freelance-marketplace-one.vercel.app',
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL, 'http://localhost:5173'] : ['http://localhost:5173', 'https://your-vercel-app-url.vercel.app'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL, 'http://localhost:5173'] : ['http://localhost:5173', 'https://your-vercel-app-url.vercel.app'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Database connection
