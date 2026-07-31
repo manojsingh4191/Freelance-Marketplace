@@ -5,6 +5,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import FreelancerDashboard from './pages/FreelancerDashboard';
 import Messages from './pages/Messages';
 import Payment from './pages/Payment';
+import Home from './pages/Home';
 import Navbar from './components/Navbar';
 import Profile from './pages/Profile';
 import useAuthStore from './store/useAuthStore';
@@ -74,7 +75,7 @@ export default function App() {
               user.role === 'Freelancer' ? <Navigate to="/freelancer-dashboard" replace /> :
               <Navigate to="/login" replace />
             ) : (
-              <Navigate to="/login" replace />
+              <Home />
             )
           } />
         </Routes>
