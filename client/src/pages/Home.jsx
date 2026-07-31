@@ -14,12 +14,12 @@ export default function Home() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+    <div className="page-content" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10 }}>
       {/* Public Navbar */}
       <div style={{ position: 'fixed', top: '24px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', zIndex: 1000, pointerEvents: 'none' }}>
         <motion.nav
           className="floating-nav"
-          initial={{ y: -50, opacity: 0 }}
+          initial={{ y: 0, opacity: 1 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           style={{ width: '90%', maxWidth: '1200px', pointerEvents: 'auto', background: 'var(--bg-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--border-color)', borderRadius: '16px' }}
@@ -71,8 +71,8 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '160px', paddingBottom: '80px', textAlign: 'center', paddingLeft: '24px', paddingRight: '24px', minHeight: '80vh' }}>
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '160px', paddingBottom: '80px', textAlign: 'center', paddingLeft: '24px', paddingRight: '24px', minHeight: '80vh', position: 'relative', zIndex: 20 }}>
+        <motion.div initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
           <div style={{ display: 'inline-block', padding: '6px 16px', background: 'rgba(124,58,237,0.1)', color: 'var(--accent)', borderRadius: '999px', fontSize: '13px', fontWeight: 800, marginBottom: '24px', border: '1px solid rgba(124,58,237,0.2)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             The Future of Freelancing
           </div>
@@ -109,10 +109,10 @@ export default function Home() {
             ].map((feature, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 1, y: 0 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-10px" }}
-                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+                transition={{ duration: 0.4, delay: 0, ease: "easeOut" }}
                 className="card"
                 style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', position: 'relative', overflow: 'hidden', transition: 'transform 0.3s ease' }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-8px)'}
