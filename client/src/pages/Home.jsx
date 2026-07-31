@@ -16,13 +16,14 @@ export default function Home() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       {/* Public Navbar */}
-      <motion.nav
-        className="floating-nav"
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        style={{ position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, width: '90%', maxWidth: '1200px', display: 'flex', justifyContent: 'center' }}
-      >
+      <div style={{ position: 'fixed', top: '24px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', zIndex: 1000, pointerEvents: 'none' }}>
+        <motion.nav
+          className="floating-nav"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ width: '90%', maxWidth: '1200px', pointerEvents: 'auto', background: 'var(--bg-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--border-color)', borderRadius: '16px' }}
+        >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #7c3aed, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -66,11 +67,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </motion.nav>
+        </motion.nav>
+      </div>
 
       {/* Hero Section */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '160px', paddingBottom: '80px', textAlign: 'center', paddingLeft: '24px', paddingRight: '24px' }}>
-        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '160px', paddingBottom: '80px', textAlign: 'center', paddingLeft: '24px', paddingRight: '24px', minHeight: '80vh' }}>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
           <div style={{ display: 'inline-block', padding: '6px 16px', background: 'rgba(124,58,237,0.1)', color: 'var(--accent)', borderRadius: '999px', fontSize: '13px', fontWeight: 800, marginBottom: '24px', border: '1px solid rgba(124,58,237,0.2)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             The Future of Freelancing
           </div>
@@ -109,11 +111,12 @@ export default function Home() {
                 key={i}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -12, scale: 1.02 }}
+                viewport={{ once: true, margin: "-10px" }}
+                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
                 className="card"
-                style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', position: 'relative', overflow: 'hidden' }}
+                style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', position: 'relative', overflow: 'hidden', transition: 'transform 0.3s ease' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-8px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'var(--accent)', filter: 'blur(80px)', opacity: 0.15, borderRadius: '50%' }} />
                 <div style={{ width: '72px', height: '72px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', marginBottom: '32px', border: '1px solid rgba(168,85,247,0.3)', boxShadow: '0 8px 32px rgba(124,58,237,0.15)' }}>
